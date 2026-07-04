@@ -110,18 +110,23 @@ curl http://localhost:5000/api/totals
 
 ### Testes
 
-Testes de unidade em **xUnit** (`backend/ExpenseTracker.Tests`) cobrindo a camada
-de serviço contra um banco **SQLite em memória** (para exercitar o comportamento
-relacional real, como o cascade delete):
+Testes em **xUnit** (`backend/ExpenseTracker.Tests`), rodando contra um banco
+**SQLite em memória** (para exercitar o comportamento relacional real, como o
+cascade delete):
 
 ```bash
 cd backend
 dotnet test
 ```
 
-Cobrem, entre outros: cadastro/listagem/cascade delete de pessoa, a regra de
-menor de idade não poder cadastrar Receita, `personId` inexistente, validação do
-tipo da transação, e o cálculo dos totais por pessoa e geral.
+- **Testes de unidade** da camada de serviço: cadastro/listagem/cascade delete
+  de pessoa, a regra de menor de idade não poder cadastrar Receita, `personId`
+  inexistente, validação do tipo da transação, e o cálculo dos totais por pessoa
+  e geral.
+- **Testes de integração** (`WebApplicationFactory`) exercitando o pipeline HTTP
+  de ponta a ponta: o **400** automático quando o campo `type` é omitido (validação
+  do `[ApiController]`) e o **400** da regra de negócio ao lançar Receita para um
+  menor, retornado em Problem Details.
 
 ---
 

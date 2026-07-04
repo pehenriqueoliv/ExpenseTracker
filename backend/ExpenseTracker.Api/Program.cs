@@ -72,3 +72,7 @@ app.UseCors(CorsFrontend);
 app.MapControllers();
 
 app.Run();
+
+// Exposes the implicit Program class (top-level statements) so the integration
+// tests can bootstrap the app with WebApplicationFactory<Program>.
+public partial class Program { }
