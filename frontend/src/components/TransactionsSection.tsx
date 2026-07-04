@@ -25,6 +25,10 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Optional filter: when a person is selected, only their transactions are
+  // listed. Empty string means "all people".
+  const [filterPersonId, setFilterPersonId] = useState("");
+
   // Reload the transactions on mount and whenever 'version' changes (e.g. after
   // creating a transaction or deleting a person with cascade).
   useEffect(() => {
@@ -38,8 +42,21 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
       .finally(() => setLoading(false));
   }, [version]);
 
+  // Clear the filter if the selected person no longer exists (e.g. was deleted),
+  // so the dropdown never points at a stale id.
+  useEffect(() => {
+    if (filterPersonId && !people.some((p) => p.id === filterPersonId)) {
+      setFilterPersonId("");
+    }
+  }, [people, filterPersonId]);
+
   // id -> name map to show the person's name in the transaction list.
   const nameById = new Map(people.map((p) => [p.id, p.name]));
+
+  // Transactions actually shown, after applying the person filter.
+  const visibleTransactions = filterPersonId
+    ? transactions.filter((t) => t.personId === filterPersonId)
+    : transactions;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -142,10 +159,31 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
 
       {error && <p className="error-box">{error}</p>}
 
+      {/* Filter by person, shown once there is at least one transaction */}
+      {transactions.length > 0 && (
+        <div className="field field-filter">
+          <label htmlFor="tr-filter">Filtrar por pessoa</label>
+          <select
+            id="tr-filter"
+            value={filterPersonId}
+            onChange={(e) => setFilterPersonId(e.target.value)}
+          >
+            <option value="">Todas as pessoas</option>
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {loading && transactions.length === 0 ? (
         <p className="empty-state">Carregando transações...</p>
       ) : transactions.length === 0 ? (
         <p className="empty-state">Nenhuma transação lançada ainda.</p>
+      ) : visibleTransactions.length === 0 ? (
+        <p className="empty-state">Nenhuma transação para a pessoa selecionada.</p>
       ) : (
         <table className="data-table">
           <thead>
@@ -157,7 +195,7 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((t) => (
+            {visibleTransactions.map((t) => (
               <tr key={t.id}>
                 <td>{t.description}</td>
                 <td>{nameById.get(t.personId) ?? "—"}</td>

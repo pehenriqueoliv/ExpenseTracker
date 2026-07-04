@@ -79,6 +79,12 @@
   flex: 0 1 120px;
 }
 
+/* Standalone person filter above the transactions table. */
+.field-filter {
+  max-width: 240px;
+  margin-bottom: 16px;
+}
+
 input,
 select {
   padding: 8px 10px;
