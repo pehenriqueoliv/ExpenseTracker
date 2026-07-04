@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Nullable reference types enabled: the compiler warns about possible nulls. -->
+    <Nullable>enable</Nullable>
+    <!-- ImplicitUsings: automatically imports common namespaces (System, System.Linq, etc.). -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Works around the NETSDK1226 error (missing prune data) seen on some .NET 10 SDK setups. -->
+    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Swashbuckle: generates the OpenAPI document and the Swagger UI for testing the API.
+         The Microsoft.AspNetCore.OpenApi package is intentionally not used to avoid a
+         Microsoft.OpenApi version conflict (2.0.0 vs 1.6.x) that breaks Swashbuckle. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    <!-- EF Core provider for SQLite (file-based database). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+    <!-- Bumps the SQLitePCLRaw set (a transitive dependency of EF Core Sqlite) to 3.0.3,
+         fixing the NU1903 vulnerability in 2.1.11. bundle and core are pinned together to
+         keep the native library and the provider aligned (avoids a broken ABI). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="3.0.3" />
+    <!-- EF Core design-time tools: required to create/apply Migrations. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
