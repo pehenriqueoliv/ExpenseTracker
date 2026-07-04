@@ -18,8 +18,12 @@ public record CreateTransactionRequest(
     [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "O valor deve ser maior que zero.")]
     decimal Amount,
 
+    // Nullable so [Required] actually triggers: on a non-nullable enum the
+    // attribute is a no-op and an omitted "type" would silently default to
+    // Expense (0). As a nullable value type, a missing field is null and is
+    // rejected with a 400 instead.
     [Required(ErrorMessage = "O tipo é obrigatório (Expense ou Income).")]
-    TransactionType Type,
+    TransactionType? Type,
 
     [Required(ErrorMessage = "O PersonId é obrigatório.")]
     Guid PersonId

@@ -38,9 +38,17 @@ public class TransactionService : ITransactionService
                 $"Pessoa com Id '{request.PersonId}' não encontrada. Não é possível criar a transação.");
         }
 
+        // The type is required and must be a defined enum value. [Required] on the
+        // DTO rejects a missing type, but a raw out-of-range number could still
+        // deserialize into an undefined value, so guard against it here as well.
+        if (request.Type is not { } type || !Enum.IsDefined(type))
+        {
+            throw new BusinessRuleException("O tipo da transação é inválido. Use 'Expense' ou 'Income'.");
+        }
+
         // Business rule 2b: if the person is under 18, only expenses are allowed.
         // Registering an income for a minor violates the rule -> HTTP 400.
-        if (person.Age < MinimumAgeForIncome && request.Type == TransactionType.Income)
+        if (person.Age < MinimumAgeForIncome && type == TransactionType.Income)
         {
             throw new BusinessRuleException(
                 $"A pessoa '{person.Name}' é menor de {MinimumAgeForIncome} anos e só pode cadastrar Despesa.");
@@ -50,7 +58,7 @@ public class TransactionService : ITransactionService
         {
             Description = request.Description,
             Amount = request.Amount,
-            Type = request.Type,
+            Type = type,
             PersonId = request.PersonId
         };
 

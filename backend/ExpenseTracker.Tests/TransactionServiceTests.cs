@@ -59,6 +59,35 @@ public class TransactionServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_NullType_ThrowsBusinessRule()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var context = factory.CreateContext();
+        var personId = await SeedPersonAsync(context, age: 30);
+        var service = new TransactionService(context);
+
+        var request = new CreateTransactionRequest("Groceries", 50m, null, personId);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(
+            () => service.CreateAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CreateAsync_UndefinedEnumType_ThrowsBusinessRule()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var context = factory.CreateContext();
+        var personId = await SeedPersonAsync(context, age: 30);
+        var service = new TransactionService(context);
+
+        // A raw out-of-range number can deserialize into an undefined enum value.
+        var request = new CreateTransactionRequest("Groceries", 50m, (TransactionType)99, personId);
+
+        await Assert.ThrowsAsync<BusinessRuleException>(
+            () => service.CreateAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task CreateAsync_IncomeForAdult_IsAllowed()
     {
         using var factory = new TestDbContextFactory();
