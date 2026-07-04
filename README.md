@@ -16,6 +16,10 @@ Monorepo com duas partes:
 /frontend  -> App React + TypeScript (Vite)
 ```
 
+## Interface
+
+![Interface do Controle de Gastos Residenciais: seções de Pessoas, Transações e Totais](docs/screenshot.png)
+
 ---
 
 ## Back-end (`/backend`)
