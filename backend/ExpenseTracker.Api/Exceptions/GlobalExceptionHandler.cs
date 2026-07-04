@@ -9,11 +9,19 @@ namespace ExpenseTracker.Api.Exceptions;
 /// </summary>
 public class GlobalExceptionHandler : IExceptionHandler
 {
-    private readonly IProblemDetailsService _problemDetailsService;
+    // Generic detail returned for unexpected errors, so internal exception
+    // messages are never leaked to the client.
+    private const string UnexpectedErrorDetail = "Ocorreu um erro inesperado. Tente novamente mais tarde.";
 
-    public GlobalExceptionHandler(IProblemDetailsService problemDetailsService)
+    private readonly IProblemDetailsService _problemDetailsService;
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+
+    public GlobalExceptionHandler(
+        IProblemDetailsService problemDetailsService,
+        ILogger<GlobalExceptionHandler> logger)
     {
         _problemDetailsService = problemDetailsService;
+        _logger = logger;
     }
 
     public async ValueTask<bool> TryHandleAsync(
@@ -31,9 +39,21 @@ public class GlobalExceptionHandler : IExceptionHandler
             _ => (StatusCodes.Status500InternalServerError, "Erro interno do servidor")
         };
 
+        // Domain exceptions carry safe, user-facing messages; anything else is
+        // unexpected, so its message is hidden behind a generic detail and the
+        // real exception is logged for diagnosis.
+        var isDomainException = exception is NotFoundException or BusinessRuleException;
+        var detail = isDomainException ? exception.Message : UnexpectedErrorDetail;
+
+        if (!isDomainException)
+        {
+            _logger.LogError(exception, "Unhandled exception while processing {Method} {Path}",
+                httpContext.Request.Method, httpContext.Request.Path);
+        }
+
         httpContext.Response.StatusCode = status;
 
-        // Build the Problem Details body using the exception message as 'detail'.
+        // Build the Problem Details body.
         return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
@@ -42,7 +62,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             {
                 Status = status,
                 Title = title,
-                Detail = exception.Message
+                Detail = detail
             }
         });
     }
