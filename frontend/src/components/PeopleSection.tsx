@@ -36,11 +36,17 @@ export function PeopleSection({ people, onChanged }: Props) {
     }
   }
 
-  async function handleDelete(id: string) {
-    // Deleting a person also removes their transactions (cascade on the back-end).
+  async function handleDelete(person: Person) {
+    // Deleting a person also removes their transactions (cascade on the back-end),
+    // so confirm first to avoid accidental data loss.
+    const confirmed = window.confirm(
+      `Deletar "${person.name}"? Isso também apaga todas as transações dessa pessoa.`
+    );
+    if (!confirmed) return;
+
     setError(null);
     try {
-      await api.deletePerson(id);
+      await api.deletePerson(person.id);
       await onChanged();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Falha ao deletar pessoa.");
@@ -102,7 +108,7 @@ export function PeopleSection({ people, onChanged }: Props) {
                 <td className="col-action">
                   <button
                     className="btn-danger"
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => handleDelete(p)}
                     title="Deletar pessoa e suas transações"
                   >
                     Deletar
