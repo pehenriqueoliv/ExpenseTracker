@@ -31,7 +31,6 @@ Monorepo com duas partes:
 
 ### Pré-requisitos
 - **.NET SDK 10** e o **runtime do ASP.NET Core 10** instalados.
-  - No Arch Linux: `sudo pacman -S dotnet-sdk aspnet-runtime`
   - Confira com: `dotnet --list-runtimes` (precisa aparecer `Microsoft.AspNetCore.App 10.x`)
 
 ### Como rodar
