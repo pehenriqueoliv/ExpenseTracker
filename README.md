@@ -1,5 +1,7 @@
 # Controle de Gastos Residenciais
 
+[![CI](https://github.com/pehenriqueoliv/ExpenseTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/pehenriqueoliv/ExpenseTracker/actions/workflows/ci.yml)
+
 Sistema para controlar gastos de uma residência: cadastro de **pessoas**,
 lançamento de **transações** (receitas e despesas) e **consulta de totais**
 por pessoa e geral.
@@ -102,6 +104,21 @@ curl -X POST http://localhost:5000/api/transactions \
 curl http://localhost:5000/api/totals
 ```
 
+### Testes
+
+Testes de unidade em **xUnit** (`backend/ExpenseTracker.Tests`) cobrindo a camada
+de serviço contra um banco **SQLite em memória** (para exercitar o comportamento
+relacional real, como o cascade delete):
+
+```bash
+cd backend
+dotnet test
+```
+
+Cobrem, entre outros: cadastro/listagem/cascade delete de pessoa, a regra de
+menor de idade não poder cadastrar Receita, `personId` inexistente, validação do
+tipo da transação, e o cálculo dos totais por pessoa e geral.
+
 ---
 
 ## Front-end (`/frontend`)
@@ -154,3 +171,56 @@ frontend/src/
 ├── App.tsx          # Layout e estado compartilhado entre as seções
 └── App.css / index.css
 ```
+
+---
+
+## Decisões de arquitetura
+
+O *porquê* das principais escolhas do projeto:
+
+- **Arquitetura em camadas (Controllers finos → Services → EF Core).** Os
+  controllers apenas recebem a requisição e delegam; toda a regra de negócio vive
+  nos *Services*. Isso mantém o HTTP separado do domínio e permite testar as
+  regras sem subir a aplicação (é o que os testes de unidade fazem).
+
+- **Validação em dois níveis.** Validação de *formato* (campos obrigatórios,
+  faixas) fica nos DTOs via *Data Annotations*, gerando **400** automático pelo
+  `[ApiController]`. Regras de *domínio* (pessoa deve existir, menor só cadastra
+  Despesa) ficam nos *Services* e lançam exceções de domínio. São
+  responsabilidades diferentes, em lugares diferentes.
+
+- **Tratamento de erros centralizado com `IExceptionHandler` + Problem Details
+  (RFC 7807).** Um único handler traduz exceções de domínio em respostas HTTP
+  padronizadas, deixando os controllers livres de `try/catch`. Mensagens de
+  domínio (404/400) são expostas ao usuário; erros inesperados retornam uma
+  mensagem genérica (para não vazar detalhes internos) e são registrados via
+  `ILogger`.
+
+- **EF Core + SQLite com migrations automáticas no startup.** Banco em arquivo,
+  sem servidor para configurar: a aplicação cria o schema na primeira execução e
+  roda de primeira. Simples e adequado ao escopo do desafio.
+
+- **`decimal` (precisão 18,2) para valores monetários.** Evita os erros de
+  arredondamento de ponto flutuante (`double`) em dinheiro.
+
+- **Enum `TransactionType` serializado como texto** ("Expense"/"Income") tanto no
+  JSON quanto no banco, mantendo os dados legíveis.
+
+- **Totais somados em memória.** O SQLite não tem `SUM` nativo de `decimal`;
+  somar na aplicação evita limitações de tradução para SQL e problemas de
+  precisão. Seguro para o volume de dados desta aplicação.
+
+- **Cascade delete no nível do banco.** A integridade referencial (apagar as
+  transações junto com a pessoa) é garantida pelo mapeamento do EF Core, sem
+  lógica manual de exclusão.
+
+- **Front-end com client de API tipado espelhando os DTOs.** Dá um contrato
+  verificado em tempo de compilação: qualquer divergência de campo é apontada
+  pelo compilador. As mensagens de erro do Problem Details são extraídas e
+  exibidas ao usuário.
+
+- **Estado compartilhado simples no `App`** (com um contador de versão para
+  sincronizar as seções) em vez de uma store global — proporcional ao tamanho da
+  aplicação, sem dependências extras.
+
+- **CORS restrito às origens locais do front-end**, em vez de liberar tudo.
