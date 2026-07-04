@@ -1,0 +1,16 @@
+# .NET
+bin/
+obj/
+*.user
+
+# SQLite database generated at runtime
+*.db
+*.db-shm
+*.db-wal
+
+# Node / Vite (frontend)
+node_modules/
+dist/
+
+# Local tooling settings
+.claude/settings.local.json
