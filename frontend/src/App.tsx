@@ -17,14 +17,21 @@ export default function App() {
 
   const [globalError, setGlobalError] = useState<string | null>(null);
 
+  // Tracks the people fetch so the section can show a loading state instead of a
+  // misleading "no people yet" message while the request is in flight.
+  const [loadingPeople, setLoadingPeople] = useState(true);
+
   // Loads the people list from the API.
   const loadPeople = useCallback(async () => {
+    setLoadingPeople(true);
     try {
       setPeople(await api.listPeople());
     } catch (err) {
       setGlobalError(
         err instanceof ApiError ? err.message : "Falha ao carregar pessoas."
       );
+    } finally {
+      setLoadingPeople(false);
     }
   }, []);
 
@@ -50,7 +57,7 @@ export default function App() {
       {globalError && <p className="error-box">{globalError}</p>}
 
       <main className="grid">
-        <PeopleSection people={people} onChanged={handleChanged} />
+        <PeopleSection people={people} loading={loadingPeople} onChanged={handleChanged} />
         <TransactionsSection people={people} version={version} onChanged={handleChanged} />
         <TotalsSection version={version} />
       </main>

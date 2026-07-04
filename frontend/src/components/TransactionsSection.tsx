@@ -23,16 +23,19 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Reload the transactions on mount and whenever 'version' changes (e.g. after
   // creating a transaction or deleting a person with cascade).
   useEffect(() => {
+    setLoading(true);
     api
       .listTransactions()
       .then(setTransactions)
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : "Falha ao carregar transações.")
-      );
+      )
+      .finally(() => setLoading(false));
   }, [version]);
 
   // id -> name map to show the person's name in the transaction list.
@@ -139,7 +142,9 @@ export function TransactionsSection({ people, version, onChanged }: Props) {
 
       {error && <p className="error-box">{error}</p>}
 
-      {transactions.length === 0 ? (
+      {loading && transactions.length === 0 ? (
+        <p className="empty-state">Carregando transações...</p>
+      ) : transactions.length === 0 ? (
         <p className="empty-state">Nenhuma transação lançada ainda.</p>
       ) : (
         <table className="data-table">

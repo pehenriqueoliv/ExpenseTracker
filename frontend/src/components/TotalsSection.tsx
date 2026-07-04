@@ -12,14 +12,17 @@ interface Props {
 export function TotalsSection({ version }: Props) {
   const [totals, setTotals] = useState<Totals | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     api
       .getTotals()
       .then(setTotals)
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : "Falha ao carregar totais.")
-      );
+      )
+      .finally(() => setLoading(false));
   }, [version]);
 
   // CSS class based on the balance sign (positive/negative).
@@ -31,7 +34,9 @@ export function TotalsSection({ version }: Props) {
 
       {error && <p className="error-box">{error}</p>}
 
-      {!totals || totals.people.length === 0 ? (
+      {loading && !totals ? (
+        <p className="empty-state">Carregando totais...</p>
+      ) : !totals || totals.people.length === 0 ? (
         <p className="empty-state">Sem dados para exibir.</p>
       ) : (
         <table className="data-table">

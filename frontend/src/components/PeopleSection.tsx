@@ -6,11 +6,13 @@ import type { Person } from "../api/types";
 // 'onChanged' asks App to reload the dependent lists after create/delete.
 interface Props {
   people: Person[];
+  // True while the people list is being fetched (shown as a loading state).
+  loading: boolean;
   onChanged: () => Promise<void> | void;
 }
 
 // Person registration + listing section.
-export function PeopleSection({ people, onChanged }: Props) {
+export function PeopleSection({ people, loading, onChanged }: Props) {
   // Controlled form fields.
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -89,7 +91,9 @@ export function PeopleSection({ people, onChanged }: Props) {
       {/* API error message, if any */}
       {error && <p className="error-box">{error}</p>}
 
-      {people.length === 0 ? (
+      {loading && people.length === 0 ? (
+        <p className="empty-state">Carregando pessoas...</p>
+      ) : people.length === 0 ? (
         <p className="empty-state">Nenhuma pessoa cadastrada ainda.</p>
       ) : (
         <table className="data-table">
